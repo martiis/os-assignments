@@ -19,9 +19,7 @@ int openDirectory()
 
     do {
         if((dp = readdir(dir)) != NULL) {
-            //KAIP d_ino atspausdinti?!?
-            //puts(dp->d_ino);
-            printf("%s\n", dp->d_name);
+            printf("%lu \t %s\n", dp->d_ino,dp->d_name);
         }
     } while(dp != NULL);
 
