@@ -5,14 +5,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
-/**
- * Sukurkite programą loginas_rw01.c, kuri:
 
-    atidarytų komandinėje eilutėje nurodytą failą tik skaitymui su open();
-    atidarytų kitą komandinėje eilutėje nurodytą failą tik rašymui (sukurtų, jei nėra, išvalytų turinį jei jau yra);
-    nukopijuotų iš skaitomo failo į rašomą komandinėje eilutėje nurodytą baitų skiačių (jei tiek baitų nėra – tiek kiek yra, t. y. visą failą) naudojant read() ir write();
-    uždarytų abu failus su close().
- */
 int doTest();
 
 int doTest(char * fv1, char *fv2, int siz)
