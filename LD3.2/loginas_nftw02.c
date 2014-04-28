@@ -1,4 +1,4 @@
-/* Vardenis Pavardenis KTK varpav */
+/* Vardenis Pavardenis KTU varpav */
 /* Failas: loginas_nftw02.c */
 
 #define _XOPEN_SOURCE 500

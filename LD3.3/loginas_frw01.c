@@ -1,3 +1,3 @@
-/* Vardenis Pavardenis KTK varpav */
+/* Vardenis Pavardenis KTU varpav */
 /* Failas: loginas_frw01.c */
 

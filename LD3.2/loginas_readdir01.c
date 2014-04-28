@@ -1,4 +1,4 @@
-/* Vardenis Pavardenis KTK varpav */
+/* Vardenis Pavardenis KTU varpav */
 /* Failas: loginas_readdir01.c */
 #include <stdio.h>
 #include <dirent.h>

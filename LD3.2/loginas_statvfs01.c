@@ -1,4 +1,4 @@
-/* Vardenis Pavardenis KTK varpav */
+/* Vardenis Pavardenis KTU varpav */
 /* Failas: loginas_statvfs01.c */
 
 #include <stdlib.h>

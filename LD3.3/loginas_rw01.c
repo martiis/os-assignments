@@ -1,4 +1,4 @@
-/* Vardenis Pavardenis KTK varpav */
+/* Vardenis Pavardenis KTU varpav */
 /* Failas: loginas_rw01.c */
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,8 +12,6 @@
     atidarytų kitą komandinėje eilutėje nurodytą failą tik rašymui (sukurtų, jei nėra, išvalytų turinį jei jau yra);
     nukopijuotų iš skaitomo failo į rašomą komandinėje eilutėje nurodytą baitų skiačių (jei tiek baitų nėra – tiek kiek yra, t. y. visą failą) naudojant read() ir write();
     uždarytų abu failus su close().
-
-    Išbandykite programą su failais ir įrenginiais, pvz.: nuskaitykite 1MB iš /dev/zero ar /dev/urandom į failą Jūsų namų kataloge (turėtų gautis nuliais ar atsitiktiniais skaičiais užpildytas 1MB failas).
  */
 int doTest();
 
