@@ -1,5 +1,5 @@
-/* Vardenis Pavardenis KTU varpav */
-/* Failas: loginas_seek01.c */
+/* Martynas Sudintas KTU marsud */
+/* Failas: marsud__seek01.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>

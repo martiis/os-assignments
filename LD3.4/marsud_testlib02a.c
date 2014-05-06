@@ -1,5 +1,5 @@
-/* Vardenis Pavardenis KTU loginas */
-/* Failas: loginas_testlib02a.c */
+/* Martynas Sudintas KTU marsud */
+/* Failas: marsud__testlib02a.c */
 
 #include <stdio.h>
 #include "marsud_testlib02.h"

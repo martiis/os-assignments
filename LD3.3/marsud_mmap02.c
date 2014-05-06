@@ -1,5 +1,5 @@
-/* Vardenis Pavardenis KTU varpav */
-/* Failas: loginas_mmap02.c */
+/* Martynas Sudintas KTU marsud */
+/* Failas: marsud__mmap02.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>

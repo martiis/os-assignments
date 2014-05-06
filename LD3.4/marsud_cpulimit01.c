@@ -1,5 +1,5 @@
-/* Vardenis Pavardenis KTU loginas */
-/* Failas: loginas_cpulimit01.c */
+/* Martynas Sudintas KTU marsud */
+/* Failas: marsud_cpulimit01.c */
 
 #include <stdio.h>
 #include <stdlib.h>

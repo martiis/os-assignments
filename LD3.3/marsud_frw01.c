@@ -1,16 +1,10 @@
-/* Vardenis Pavardenis KTU varpav */
-/* Failas: loginas_frw01.c */
+/* Martynas Sudintas KTU marsud */
+/* Failas: marsud_frw01.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-/**
- * Nukopijuokite loginas_rw01.c į loginas_frw01.c ir pakeiskite, kad vietoj open() būtų naudojama fopen(), vietoj close() – fclose(), vietoj read() – fread(), vietoj write() – fwrite().
-Išbandykite naują programą. Turėtų gautis toks pat rezultatas.
-Kuo skiriasi fgetc() ir getc(): ?
- */
 
 int doTest();
 

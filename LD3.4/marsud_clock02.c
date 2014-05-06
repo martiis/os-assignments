@@ -1,5 +1,5 @@
-/* Vardenis Pavardenis KTU loginas */
-/* Failas: loginas_clock02.c */
+/* Martynas Sudintas KTU marsud */
+/* Failas: marsud_clock02.c */
 #include <stdio.h>
 #include <time.h>
 
