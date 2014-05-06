@@ -27,8 +27,6 @@ int infinity()
     return 1;
 }
 
-// -> END cpulimit01.c
-
 int main(int argc, char *argv[]) {
     if(argc != 2) {
         puts("Invalid number of arguments");

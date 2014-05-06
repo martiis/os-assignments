@@ -1,0 +1,496 @@
+
+
+    Sign in
+    Register
+
+    Home
+    Projects
+    Help
+
+Search:
+P175B304: Operacinės sistemos
+
+    Overview
+    Activity
+    Wiki
+    Repository
+
+Wiki
+Start page
+Index by title
+Index by date
+LD3 3
+
+    LD3 3
+        POSIX C I/O
+            Failo atidarymas
+            Asinchroninis I/O
+            Failų „mapinimas“ į RAM
+    Užduotys
+            POSIX C I/O užduotys
+                Sinchroninis I/O
+                Buferizuotas I/O
+                Asinchroninis I/O
+                Failų „mapinimas“ į RAM
+
+POSIX C I/O
+
+Tikslas: darbas su failais
+
+    Headeriai: <aio.h>, <unistd.h>, <sys/mman.h>, <stdio.h>
+    MAN: open(2), close(2), read(2), write(2), lseek(2), fsync(3C), fopen(3C), fdopen(3C), fclose(3C), fgetpos(3C), fsetpos(3C), fread(3C), fwrite(3C), fgetc(3C), getc(3C), getchar(3C), fgets(3C), fputs(3C), gets(3C), puts(3C), fscanf(3C), fprintf(3C), scanf(3C), printf(3C), sscanf(3C), sprintf(3C), aio_read(3C), aio_write(3C), aio_return(3C), aio_error(3C), aio_cancel(3C), mmap(2), munmap(2), msync(2)
+    http://en.wikipedia.org/wiki/Stdio
+    http://en.wikipedia.org/wiki/Asynchronous_I/O
+    http://en.wikipedia.org/wiki/Mmap
+
+Šis užsiėmimas skirtas susipažinimui su UNIX naudojamais failų skaitymo būdais. Visas apžvelgiamas funkcijas galima suskirstyti į grupes pagal veikimo tipą:
+
+    „paprastas“ žemo lygio sinchroninis skaitymas/rašymas naudojant deskriptorių;
+    buferizuotas skaitymas/rašymas naudojant C stdio bibliotekos funkcijas, dirbančias su FILE struktūra (abstraktesnis interfeisas, po apačia naudoja pirmos grupės funkcijas);
+    asinchroninis skaitymas/rašymas;
+    failų „mapinimas“ į proceso adresų erdvę.
+
+Pagal atliekamus veiksmus funkcijas galima suskirstyti:
+
+    atidarymas/uždarymas
+    skaitymas/rašymas
+    pozicijos faile nustatymas (nuo kur bus vykdoma sekanti skaitymo/rašymo operacija)
+    pagalbinės (klaidų apdorojimo, buferių „išstūmimo“ į diską ir t.t.).
+
+Failo atidarymas
+
+Visos funkcijų grupės naudoja su open() atidarytų failų deskriptorius (išskyrus stdio bibliotekos funkcijas, kuriose open() gali būti pakeista į fopen()). Funkcija open() jau pažįstama iš ankstesnio užsiėmimo, tačiau iki šiol ją naudojom tik skaitomo failo atidarymui. Pilnas open() aprašas:
+
+int open(const char *path, int oflag, /* mode_t mode */);
+
+Parametras oflag nurodo failo atidarymo režimą. Iki šiol naudojom O_RDONLY, tačiau yra ir daugiau konstantų, kurios gali būti apjungiamos aritmetine OR operacija (ne logine, t. y. OR atliekama kiekvienam bitui). Formaliai pagal POSIX specifikaciją:
+
+    oflag turi būti sudarytas iš tik vienos iš vėliavėlių:
+        O_EXEC
+        O_RDONLY – failas atidaromas tik skaitymui
+        O_RDWR – failas atidaromas skaitymui ir rašymui
+        O_SEARCH
+        O_WRONLY – failas atidaromas tik rašymui
+    gali būti (bet nebūtina) su OR prijungta bet kurios vėliavėlės iš šių:
+        O_APPEND – atidarius, operacijų poslinkis (offset) nustatomas į failo galą (t. y. kad, rašymo operacija papildytu failą)
+        O_CLOEXEC
+        O_CREAT – jei failo nėra jis sukuriamas, o jo prieigos teises nusako mode parametras (įvertinant umask() maskę, lygiai taip kaip ankstesnio užsiėmimo metu nagrinėtai creat() funkcijai)
+        O_DIRECTORY
+        O_DSYNC – (SIO) ...
+        O_EXCL
+        O_NOCTTY
+        O_NOFOLLOW
+        O_NONBLOCK
+        O_RSYNC – (SIO) ...
+        O_SYNC – (SIO, Synchronized Input and Output) papildomi reikalavimai duomenų vientisumo užtikrinimui (supaprastintai: rašymo operacija baigiasi tada, kai duomenys fiziškai įrašomi į diską, o ne į OS kešą). Nemaišyti su Synchronous I/O (priešinga sąvoka asinchroniniam I/O) – tai ne tas pats.
+        O_TRUNC – atidaromo failo turinys ištrinamas (failas tampa 0 baitų dydžio)
+        O_TTY_INIT
+
+Pavyzdžiui, failo atidarymas rašymui sukuriant, jei tokio nėra ir išvalant duomenis, jei yra:
+
+d = open( "failas.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644 );
+
+Čia mode parametras 0644 – skaičius aštuntainėje sistemoje (ne dešimtainėj ar šešioliktainėj). Vietoj 0644 galima irgi nurodyti išraišką (smulkiau žr.: chmod(2) ):
+
+S_IRUSR | S_IWUSR | S_IRGRP S_IROTH
+
+Asinchroninis I/O
+
+Asinchroninis I/O (AIO) vyksta lygiagrečiai su programos darbu. Programa nurodo OS iš kokio deskriptoriaus kiek duomenų nuskaityti ir kur juos padėti. Apie AIO operacijos pabaigą OS programai gali pranešti signalo pagalba (su signalais dirbsit ateinančiuose užsiėmimuose, todėl kol kas į juos nesigilinam).
+
+AIO funkcijos, kaip parametrą, naudoja aiocb struktūrą, kurios laukai apibrėžia AIO operacijos nustatymus. Struktūros aiocb laukai (tik tie, kurie aktualūs lab. darbui):
+
+    aio_fildes – deskriptorius iš kurio bus skaitoma (jis t.b. atidarytas)
+    aio_offset – pozicija faile, nuo kur bus vykdoma AIO operacija
+    aio_buf – buferio adresas, į kur dėti nuskaitytus ar iš kur imti rašomus duomenis (vieta buferiui turi išskirta)
+    aio_nbytes – kiek baitų skaityti ar rašyti (t.b. ne daugiau, nei išskirta vietos buferiui).
+
+AIO funkcijos (smulkią ir tikslią informaciją apie kiekvieną iš jų galite rasti man puslapiuose arba POSIX specifikacijoje):
+
+    aio_read – pradėti skaitymo AIO operaciją
+    aio_write – pradėti rašymo AIO operaciją
+    aio_suspend – sustabdyti programos darbą, kol pasibaigs bent viena parametrais nurodyta AIO operacija (funkcijai paduodamas nuorodų į aiocb struktūras masyvas)
+    aio_return – grąžina nurodytos AIO operacijos rezultatą ( read() ar write() grąžintą reikšmę )
+    aio_cancel – nutraukti nurodytą AIO operaciją arba visas su nurodytu deskriptoriumi susijusias AIO operacijas
+    aio_error – grąžina AIO operacijos klaidos kodą (jei klaida buvo)
+
+Toliau pateiktas AIO naudojančios programos pavyzdys. Programos idėja:
+
+    atidaryti /dev/urandom skaitymui
+    su aio_read() pabandyti nuskaityti 1MB duomenų (turėtų nuskaityt atsitiktinius duomenis)
+    kol vyksta skaitymas „ką nors nuveikti“ ( kp_test_dummy() funkcija )
+    patikrinti kas gavosi (ar nuskaitė ir kiek duomenų)
+    uždaryti deskriptorių
+    su ta pačia „ką nors nuveikti“ funkcija parodyti, kad duomenys kintamajame, kurį aio_read() naudojo nuskaitytų duomenų saugojimui pasikeitė (nors programa pati nieko į kintamąjį nerašė – peršasi išvada – duomenis pakeitė OS vykdydama AIO operaciją)
+
+/* Kestutis Paulikas KTK kespaul */
+
+/* Failas: kespaul_aio01.c */
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <sys/types.h>
+
+#include <sys/stat.h>
+
+#include <fcntl.h>
+
+#include <unistd.h>
+
+#include <string.h>
+
+#include <aio.h>
+
+#define BUFFLEN 1048576
+
+int kp_test_open(const char *name);
+
+int kp_test_close(int fd);
+
+int kp_test_aio_read_start( const int d, struct aiocb *aiorp, void *buf, const int count );
+
+int kp_test_dummy( const void *data, int n );
+
+int kp_test_aio_read_waitcomplete( struct aiocb *aiorp );
+
+int kp_test_open(const char *name){
+
+   int dskr;
+
+   dskr = open( name, O_RDONLY );
+
+   if( dskr == -1 ){
+
+      perror( name );
+
+      exit(1);
+
+   }
+
+   printf( "dskr = %d\n", dskr );
+
+   return dskr;
+
+}
+
+int kp_test_close(int fd){
+
+   int rv;
+
+   rv = close( fd );
+
+   if( rv != 0 ) perror ( "close() failed" );
+
+   else puts( "closed" );
+
+   return rv;
+
+}
+
+int kp_test_aio_read_start( const int d, struct aiocb *aiorp, void *buf, const int count ){
+
+   int rv = 0;
+
+   memset( (void *)aiorp, 0, sizeof( struct aiocb ) );
+
+   aiorp->aio_fildes = d;
+
+   aiorp->aio_buf = buf;
+
+   aiorp->aio_nbytes = count;
+
+   aiorp->aio_offset = 0;
+
+   rv = aio_read( aiorp );
+
+   if( rv != 0 ){
+
+      perror( "aio_read failed" );
+
+      abort();
+
+   }
+
+   return rv;
+
+}
+
+int kp_test_dummy( const void *data, int n ){
+
+   int i, cnt = 0;
+
+   for( i = 0; i < n; i++ )
+
+      if( ((char*)data)[i] == '\0' ) cnt++;
+
+   printf( "Number of '0' in data: %d\n", cnt );
+
+   return 1;
+
+}
+
+int kp_test_aio_read_waitcomplete( struct aiocb *aiorp ){
+
+   const struct aiocb *aioptr[1];
+
+   int rv;
+
+   aioptr[0] = aiorp;
+
+   rv = aio_suspend( aioptr, 1, NULL );
+
+   if( rv != 0 ){
+
+      perror( "aio_suspend failed" );
+
+      abort();
+
+   }
+
+   rv = aio_return( aiorp );
+
+   printf( "AIO complete, %d bytes read.\n", rv );
+
+   return 1;
+
+}
+
+int main( int argc, char * argv[] ){
+
+   int d;
+
+   struct aiocb aior;
+
+   char buffer[BUFFLEN];
+
+   printf( "(C) 2013 kestutis Paulikas, %s\n", __FILE__ );
+
+   d = kp_test_open( "/dev/urandom" );
+
+   kp_test_aio_read_start( d, &aior, buffer, sizeof(buffer) );
+
+   kp_test_dummy( buffer, sizeof(buffer) );
+
+   kp_test_aio_read_waitcomplete( &aior );
+
+   kp_test_close( d );
+
+   kp_test_dummy( buffer, sizeof(buffer) );
+
+   return 0;
+
+}
+
+Failų „mapinimas“ į RAM
+
+    PAPILDOMA INFORMACIJA: http://beej.us/guide/bgipc/output/html/multipage/mmap.html
+
+Tai dar vienas OS naudojamas I/O būdas (memory-mapped file I/O), kai failai prijungiami į proceso adresų erdvę. Tada procesas gali dirbti su failu lygiai taip, kaip su atmintimi: rašant į atmintį automatiškai rašoma į failą diske ar įrenginį, skaitant – skaitoma iš disko ar įrenginio. Atminties ir failo ar įrenginio turinio sinchronizavimui naudojami OS virtualios atminties valdymo mechanizmai (tie patys, kaip „swapinimo“ valdymui). Naudojamas „vėlyvas“ („lazy“) skaitymas ir rašymas, t. y. duomenų blokas nuskaitomas tik tada, kai kreipiamasi į atitinkamą RAM regioną, įrašomi kai iškviečiama msync(), failai uždaromi arba OS nuožiūra (pvz.: trūkstant laisvo RAM).
+Naudojamos funkcijos:
+
+    mmap() – failo „mapinimas“ (nurodomas atidaryto failo deskriptorius), grąžina adresą, nuo kur prasideda failas proceso atminty
+    munmap() – failo „numapinimas“ (atminties ir deskriptoriaus sąryšio panaikinimas)
+    msync() – priverstinis duomenų išstūmimas į diską arba OS kešo išvalymas (kad sekantys skaitymai vyktų iš failo, o ne kešo), funkcijai gali būti nurodomos vėliavėlės:
+        MS_ASYNC – rašoma asinchroniškai ( msync() grįžta iš karto )
+        MS_SYNC – rašoma sinchroniškai ( msync() grįžta tik kai duomenys fiziškai įrašyti )
+        MS_INVALIDATE – išvalo kešą
+
+Toliau pateiktas programos pavyzdys, kuri sukuria argumentu nurodytą naują 1MB failą (jei toks jau yra – failo neliečia ir grąžina klaidą), prijungia jį prie proceso su mmap(), užpildo failą 0xF0 reikšmėm ir uždaro.
+
+/* Kestutis Paulikas KTK kespaul */
+
+/* Failas: kespaul_mmap01.c */
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <sys/mman.h>
+
+#include <sys/types.h>
+
+#include <sys/stat.h>
+
+#include <unistd.h>
+
+#include <fcntl.h>
+
+#include <sys/time.h>
+
+#include <string.h>
+
+#define SIZE 1048576
+
+int kp_test_openw(const char *name);
+
+int kp_test_close(int fd);
+
+void* kp_test_mmapw( int d, int size );
+
+int kp_test_munamp( void *a, int size );
+
+int kp_test_usemaped( void *a, int size );
+
+int kp_test_openw(const char *name){
+
+   int dskr;
+
+   dskr = open( name, O_RDWR | O_CREAT | O_EXCL, 0640 );
+
+   if( dskr == -1 ){
+
+      perror( name );
+
+      exit( 255 );
+
+   }
+
+   printf( "dskr = %d\n", dskr );
+
+   return dskr;
+
+}
+
+int kp_test_close(int fd){
+
+   int rv;
+
+   rv = close( fd );
+
+   if( rv != 0 ) perror ( "close() failed" );
+
+   else puts( "closed" );
+
+   return rv;
+
+}
+
+void* kp_test_mmapw( int d, int size ){
+
+   void *a = NULL;
+
+   lseek( d, size - 1, SEEK_SET );
+
+   write( d, &d , 1 );        /* iraso bile ka i failo gala */
+
+   a = mmap( NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, d, 0 );
+
+   if( a == MAP_FAILED ){
+
+      perror( "mmap failed" );
+
+      abort();
+
+   }
+
+   return a;
+
+}
+
+int kp_test_munamp( void *a, int size ){
+
+   int rv;
+
+   rv = munmap( a, size );
+
+   if( rv != 0 ){
+
+      puts( "munmap failed" );
+
+      abort();
+
+   }
+
+   return 1;
+
+}
+
+int kp_test_usemaped( void *a, int size ){
+
+   memset( a, 0xF0, size );
+
+   return 1;
+
+}
+
+int main( int argc, char * argv[] ){
+
+   int d;
+
+   void *a = NULL;
+
+   printf( "(C) 2013 kestutis Paulikas, %s\n", __FILE__ );
+
+   if( argc != 2 ){
+
+      printf( "Naudojimas:\n %s failas\n", argv[0] );
+
+      exit( 255 );
+
+   }
+
+   d = kp_test_openw( argv[1] );
+
+   a = kp_test_mmapw( d, SIZE );
+
+   kp_test_usemaped( a, SIZE );
+
+   kp_test_munamp( a, SIZE );
+
+   kp_test_close( d );
+
+   return 0;
+
+}
+
+Užduotys
+
+POSIX C I/O užduotys
+Sinchroninis I/O
+Sukurkite programą loginas_rw01.c, kuri:
+
+    atidarytų komandinėje eilutėje nurodytą failą tik skaitymui su open();
+    atidarytų kitą komandinėje eilutėje nurodytą failą tik rašymui (sukurtų, jei nėra, išvalytų turinį jei jau yra);
+    nukopijuotų iš skaitomo failo į rašomą komandinėje eilutėje nurodytą baitų skiačių (jei tiek baitų nėra – tiek kiek yra, t. y. visą failą) naudojant read() ir write();
+    uždarytų abu failus su close().
+
+Išbandykite programą su failais ir įrenginiais, pvz.: nuskaitykite 1MB iš /dev/zero ar /dev/urandom į failą Jūsų namų kataloge (turėtų gautis nuliais ar atsitiktiniais skaičiais užpildytas 1MB failas).
+Sukurkite programą loginas_seek01.c, kuri:
+
+    sukurtų failą (su open() ar creat());
+    nueitų į 1MB gilyn į failą su lseek();
+    įrašytų 1 baitą;
+    uždarytų failą su close().
+
+Kokio dydžio failas gavosi (koks jo dydis, ir kiek vietos jis užima diske: ? (ką apie jį rodo ls, du, stat komandos).
+Buferizuotas I/O
+
+Nukopijuokite loginas_rw01.c į loginas_frw01.c ir pakeiskite, kad vietoj open() būtų naudojama fopen(), vietoj close() – fclose(), vietoj read() – fread(), vietoj write() – fwrite().
+Išbandykite naują programą. Turėtų gautis toks pat rezultatas.
+Kuo skiriasi fgetc() ir getc(): ?
+Asinchroninis I/O
+
+    Kiek duomenų nuskaito source:posix|kespaul_aio01.c programa: ? (ar nuskaito užsiprašytą 1MB)
+    Sukurkite programą loginas_aio02.c (galite naudoti pavyzdžio ar savo anksčiau sukurtų programų fragmentus), kuri iš /dev/urandom su aio_read() nuskaitytų 1MB duomenų (t. y. tiek kiek prašoma).
+        bus reikalingi pakartotiniai aio_read() iškvietimai;
+        reikės keisti adresą kur rašyti duomenis, kad neperrašytų ant jau nuskaitytų.
+
+    Pabandykite originalią ir savo programas su /dev/random ir atsitiktinių duomenų failu.
+
+1MB atsitiktinių duomenų failo kūrimas:
+
+dd if=/dev/urandom of=atsitiktiniai_duomenys_1MB bs=1024 count=1024
+
+Failų „mapinimas“ į RAM
+
+    Sukurkite programa loginas_mmap02.c, kuri nukopijuotų failus naudojant mmap() (kad būtų paprasčiau laikykime, kad failų dydžiai iki 100MB, t. y. abu telpa į 32bit proceso erdvę):
+        atidarytų ir prijungtų 2 programos argumentais nurodytus failus su mmap() (vieną iš jų tik skaitymui, tik skaitomo failo dydį galite sužinoti su fstat() funkcija)
+        nukopijuotų vieno failo turinį į kitą (su memcpy() ar paprastu ciklu)
+        atjungtų abu failus
+        uždarytų abu deskriptorius
+
+© 2013-2014 I. Lagzdinytė-Budnikė, K. Paulikas, N. Sarafinienė
+Powered by Redmine © 2006-2013 Jean-Philippe Lang
+
