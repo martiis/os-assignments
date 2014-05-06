@@ -33,7 +33,6 @@ int infinity()
 	sk = 0;
 	while(1) {
 		sk = sk + 1;
-		printf("%d\n", sk);
 	}
 	return 1;
 }
