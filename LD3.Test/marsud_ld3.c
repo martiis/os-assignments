@@ -38,7 +38,7 @@ void init(char * fv, int nbyte)
     //
     int fileDskr = openFile(fv);
     struct stat mystat;
-    void *pmap;
+    char *pmap;
 
     if(fstat(fileDskr, &mystat) < 0) {
         perror("fstat");
@@ -55,6 +55,10 @@ void init(char * fv, int nbyte)
     }
 
     //NOW HOW TO READ?!?
+
+    printf("Nuskaityta %d", (int)pmap[nbyte]);
+    munmap(pmap, mystat.st_size);
+    closeFile(fileDskr);
 
     //->END
     time_t end = time(0);
