@@ -6,7 +6,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+     / labas...
+   -
+  /  \ labas...
+-- 
+  \  / labas...
+   -
+     \ labas...
+*/
 int main(int argc, char * argv[])
 {
-
+	fork();
+	fork();
+	puts("labas as krabas.");
 }
