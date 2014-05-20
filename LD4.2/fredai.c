@@ -1,6 +1,3 @@
-/* Vardenis Pavardenis KTU varpav */
-/* Failas: loginas_pipe02.c */
-
 /*
  * CS170: 
  * print4.c -- forks off THREADS threads that print their ids
@@ -28,36 +25,14 @@ void *printme(void *arg)
 	return NULL;
 }
 
-int factorial(int num)
-{
-    int sum=1;
-    int count;
-    
-    if(num > 0) {
-        for(count=1;count<=num;count++)
-        {
-            sum = sum*count;
-        }
-    } else if(num < 0) {
-        for(count=num;count<0;count--)
-        {
-            sum = sum*count;
-        }
-    } else {
-        return 0;
-    }
-    
-    return sum;
-}
-
-int main()
+int
+main()
 {
 	int i;
 	int *vals;
 	pthread_t *tid_array;
 	void *retval;
 	int err;
-	int fk;
 
 	vals = (int *)malloc(THREADS*sizeof(int));
 	if(vals == NULL)
@@ -73,7 +48,11 @@ int main()
 
 	for (i = 0; i < THREADS; i++) 
 	{
-		err = pthread_create(&(tid_array[i]), NULL, printme, NULL);
+		err = pthread_create(&(tid_array[i]),
+				     NULL,
+				     printme,
+				     NULL);
+
 		if(err != 0)
 		{
 			fprintf(stderr,"thread %d ",i);
@@ -81,15 +60,20 @@ int main()
 			exit(1);
 		}
 			
-    }
+    	}
 
-    sleep(2);
+	printf("main thread -- ");
+  	printme(NULL);	/* main thread */
+
+
 	for (i = 0; i < THREADS; i++) 
 	{
 
-		printf("I'm %d\n", (int)tid_array[i]);
-    	fk = factorial(Ego());
-    	printf("\tFactorial: %d\n", fk);
+		printf("I'm %d Trying to join with thread %d\n", 
+			Ego(),(int)tid_array[i]);
+    		pthread_join(tid_array[i], &retval);
+    		printf("%d Joined with thread %d\n", 
+			Ego(),(int)tid_array[i]);
   	}
 
 	free(tid_array);

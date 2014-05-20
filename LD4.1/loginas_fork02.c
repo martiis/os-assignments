@@ -24,7 +24,7 @@ void forkChild(pid_t f)
 			exit(0);
 		default:
 		    pid = getpid();
-            printf("parent pid: %d\n", pid);
+		    printf("parent pid: %d\n", pid);
 			exit(0);
 	}
 }
