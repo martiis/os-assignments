@@ -88,7 +88,7 @@ int main()
 	{
 
 		printf("I'm %d\n", (int)tid_array[i]);
-    	fk = factorial(Ego());
+    	fk = factorial((int)tid_array[i]);
     	printf("\tFactorial: %d\n", fk);
   	}
 
