@@ -1,4 +1,4 @@
-/* Vardenis Pavardenis KTU varpav */
+/* Martynas Sudintas KTU marsud */
 /* Failas: loginas_signal01.c */
 
 /* loginas_signal01: tevo procesas sukuria vaiko procesa */

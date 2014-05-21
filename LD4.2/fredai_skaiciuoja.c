@@ -1,4 +1,4 @@
-/* Vardenis Pavardenis KTU varpav */
+/* Martynas Sudintas KTU marsud */
 /* Failas: loginas_pipe02.c */
 
 /*
@@ -88,8 +88,8 @@ int main()
 	{
 
 		printf("I'm %d\n", (int)tid_array[i]);
-    	fk = factorial((int)tid_array[i]);
-    	printf("\tFactorial: %d\n", fk);
+    		fk = factorial((int)tid_array[i]);
+    		printf("\tFactorial: %d\n", fk);
   	}
 
 	free(tid_array);
